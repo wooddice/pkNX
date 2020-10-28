@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using pkNX.Containers;
@@ -40,6 +41,7 @@ namespace pkNX
 
         protected void OpenBinary(string path)
         {
+            path = FileMitm.GetRedirectedReadPath(path);
             Stream = new FileStream(path, FileMode.Open);
             Reader = new BinaryReader(Stream);
             Initialize();
@@ -68,19 +70,19 @@ namespace pkNX
         public virtual void SetEntry(int index, byte[] value, int subFile)
         {
             Files[index] = value;
-            Modified |= value != null;
+            Modified |= value != null && !this[index].SequenceEqual(value);
         }
 
         private byte[] GetCachedValue(int i, int subFile)
         {
-            return Files[i] ?? (Files[i] = GetEntry(i, subFile));
+            return Files[i] ??= GetEntry(i, subFile);
         }
 
         #endregion
 
         public byte[] this[int index]
         {
-            get => GetCachedValue(index, 0);
+            get => (byte[]) GetCachedValue(index, 0).Clone();
             set => SetEntry(index, value, 0);
         }
 
@@ -116,6 +118,7 @@ namespace pkNX
             bool sameLocation = path == FilePath && Reader != null;
             var writePath = sameLocation ? Path.GetTempFileName() : path;
 
+            path = FileMitm.GetRedirectedWritePath(path);
             var stream = new FileStream(path, FileMode.CreateNew);
             using (var bw = new BinaryWriter(stream))
                 await Pack(bw, handler, token).ConfigureAwait(false);
@@ -139,6 +142,11 @@ namespace pkNX
         }
 
         public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
             Stream.Dispose();
             Reader.Dispose();

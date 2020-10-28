@@ -1,13 +1,14 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FluentAssertions;
+using Xunit;
 
 namespace pkNX.Tests
 {
-    [TestClass]
     public class UnitTest1
     {
-        [TestMethod]
+        [Fact]
         public void TestMethod1()
         {
+            true.Should().BeTrue();
         }
     }
 }

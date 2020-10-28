@@ -4,10 +4,13 @@ namespace pkNX.Structures
 {
     public abstract class EncounterTrade
     {
-        protected byte[] Data { get; set; }
+        protected readonly byte[] Data;
+
+        protected EncounterTrade(byte[] data) => Data = data;
+
         public virtual byte[] Write() => (byte[])Data.Clone();
 
-        public abstract int Species { get; set; }
+        public abstract Species Species { get; set; }
         public virtual int HeldItem { get; set; }
         public abstract int Level { get; set; }
         public abstract int Form { get; set; }

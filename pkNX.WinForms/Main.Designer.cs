@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.TB_Path = new System.Windows.Forms.TextBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.Menu_File = new System.Windows.Forms.ToolStripMenuItem();
@@ -39,6 +40,7 @@
             this.randomizationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.Menu_SetRNGSeed = new System.Windows.Forms.ToolStripMenuItem();
             this.Menu_Restore = new System.Windows.Forms.ToolStripMenuItem();
+            this.Menu_Current = new System.Windows.Forms.ToolStripMenuItem();
             this.FLP_Controls = new System.Windows.Forms.FlowLayoutPanel();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -96,7 +98,8 @@
             this.Menu_Options.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.Menu_Language,
             this.randomizationToolStripMenuItem,
-            this.Menu_Restore});
+            this.Menu_Restore,
+            this.Menu_Current});
             this.Menu_Options.Name = "Menu_Options";
             this.Menu_Options.Size = new System.Drawing.Size(61, 20);
             this.Menu_Options.Text = "Options";
@@ -106,7 +109,7 @@
             this.Menu_Language.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.CB_Lang});
             this.Menu_Language.Name = "Menu_Language";
-            this.Menu_Language.Size = new System.Drawing.Size(184, 22);
+            this.Menu_Language.Size = new System.Drawing.Size(222, 22);
             this.Menu_Language.Text = "Language";
             // 
             // CB_Lang
@@ -132,7 +135,7 @@
             this.randomizationToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.Menu_SetRNGSeed});
             this.randomizationToolStripMenuItem.Name = "randomizationToolStripMenuItem";
-            this.randomizationToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
+            this.randomizationToolStripMenuItem.Size = new System.Drawing.Size(222, 22);
             this.randomizationToolStripMenuItem.Text = "Randomization";
             // 
             // Menu_SetRNGSeed
@@ -146,8 +149,17 @@
             // 
             this.Menu_Restore.Enabled = false;
             this.Menu_Restore.Name = "Menu_Restore";
-            this.Menu_Restore.Size = new System.Drawing.Size(184, 22);
+            this.Menu_Restore.Size = new System.Drawing.Size(222, 22);
             this.Menu_Restore.Text = "Restore Original Files";
+            // 
+            // Menu_Current
+            // 
+            this.Menu_Current.Enabled = false;
+            this.Menu_Current.Name = "Menu_Current";
+            this.Menu_Current.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F)));
+            this.Menu_Current.Size = new System.Drawing.Size(222, 22);
+            this.Menu_Current.Text = "Open Current Folder";
+            this.Menu_Current.Click += new System.EventHandler(this.Menu_Current_Click);
             // 
             // FLP_Controls
             // 
@@ -166,7 +178,9 @@
             this.Controls.Add(this.FLP_Controls);
             this.Controls.Add(this.TB_Path);
             this.Controls.Add(this.menuStrip1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Main";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "pkNX";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Main_FormClosing);
             this.menuStrip1.ResumeLayout(false);
@@ -189,6 +203,7 @@
         private System.Windows.Forms.ToolStripMenuItem Menu_SetRNGSeed;
         private System.Windows.Forms.ToolStripMenuItem Menu_Restore;
         private System.Windows.Forms.FlowLayoutPanel FLP_Controls;
+        private System.Windows.Forms.ToolStripMenuItem Menu_Current;
     }
 }
 

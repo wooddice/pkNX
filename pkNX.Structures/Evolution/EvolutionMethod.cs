@@ -8,7 +8,7 @@
         public EvolutionType Method;
         public int Species;
         public int Argument;
-        public int Form = -1;
+        public int Form;
         public int Level;
 
         public EvolutionMethod Copy(int species = -1)
@@ -24,5 +24,7 @@
                 Level = Level
             };
         }
+
+        public bool HasData => Species != 0;
     }
 }

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
+using pkNX.Sprites;
 using pkNX.Structures;
 using pkNX.WinForms.Properties;
 using EditorBase = pkNX.WinForms.Controls.EditorBase;
@@ -56,7 +57,7 @@ namespace pkNX.WinForms
 
         private void Menu_Open_Click(object sender, EventArgs e)
         {
-            var fbd = new FolderBrowserDialog();
+            using var fbd = new FolderBrowserDialog();
             if (fbd.ShowDialog() == DialogResult.OK)
                 OpenPath(fbd.SelectedPath);
         }
@@ -67,12 +68,21 @@ namespace pkNX.WinForms
                 return;
 
             Editor.Close();
+            EditUtil.SaveSettings(Editor.Game);
             Settings.Default.Language = CB_Lang.SelectedIndex;
             Settings.Default.GamePath = TB_Path.Text;
             Settings.Default.Save();
         }
 
-        private void Menu_Exit_Click(object sender, EventArgs e) => Close();
+        private void Menu_Exit_Click(object sender, EventArgs e)
+        {
+            if (ModifierKeys == Keys.Control) // triggered via hotkey
+            {
+                if (DialogResult.Yes != WinFormsUtil.Prompt(MessageBoxButtons.YesNo, $"Quit {nameof(pkNX)}?"))
+                    return;
+            }
+            Close();
+        }
 
         private void Menu_SetRNGSeed_Click(object sender, EventArgs e)
         {
@@ -101,12 +111,12 @@ namespace pkNX.WinForms
                 OpenFile(path);
         }
 
-        private void OpenFile(string path)
+        private static void OpenFile(string path)
         {
             var result = FileRipper.TryOpenFile(path);
             if (result.Code != RipResultCode.Success)
             {
-                WinFormsUtil.Alert("Invalid file loaded." + Environment.NewLine + $"Unable to recognize data: ${result}.", path);
+                WinFormsUtil.Alert("Invalid file loaded." + Environment.NewLine + $"Unable to recognize data: {result.Code}.", path);
                 return;
             }
 
@@ -126,14 +136,24 @@ namespace pkNX.WinForms
         private void LoadROM(EditorBase editor)
         {
             Editor = editor;
-            var ctrl = Editor.GetControls(80, 20);
+            var ctrl = Editor.GetControls(100, 30);
             FLP_Controls.Controls.Clear();
             foreach (var c in ctrl)
                 FLP_Controls.Controls.Add(c);
 
             Text = $"{nameof(pkNX)} - {Editor.Game}";
             TB_Path.Text = Editor.Location;
+            Menu_Current.Enabled = true;
+            EditUtil.LoadSettings(Editor.Game);
+            EditUtil.SaveSettings(Editor.Game);
+            SpriteUtil.Initialize(editor.Game.GetMaxSpeciesID() >= 809);
             System.Media.SystemSounds.Asterisk.Play();
+        }
+
+        private void Menu_Current_Click(object sender, EventArgs e)
+        {
+            if (Directory.Exists(TB_Path.Text))
+                Process.Start("explorer.exe", TB_Path.Text);
         }
     }
 }

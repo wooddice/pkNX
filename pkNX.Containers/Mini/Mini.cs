@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,11 +21,11 @@ namespace pkNX.Containers
 
         public byte[] this[int index]
         {
-            get => Files[index];
+            get => (byte[])Files[index].Clone();
             set
             {
+                Modified |= !Files[index].SequenceEqual(value);
                 Files[index] = value;
-                Modified = true;
             }
         }
 
@@ -51,7 +52,7 @@ namespace pkNX.Containers
             return new Task(() =>
             {
                 byte[] data = MiniUtil.PackMini(Files, Identifier);
-                File.WriteAllBytes(path, data);
+                FileMitm.WriteAllBytes(path, data);
             }, token);
         }
 
@@ -64,7 +65,7 @@ namespace pkNX.Containers
             for (int i = 0; i < Count; i++)
             {
                 var fn = Path.Combine(path, i.ToString(format) + ".bin");
-                File.WriteAllBytes(fn, Files[i]);
+                FileMitm.WriteAllBytes(fn, Files[i]);
                 handler.StepFile(i + 1);
             }
         }

@@ -9,13 +9,17 @@ namespace pkNX.Randomization
     {
         private readonly EvolutionSet[] Evolutions;
         private readonly GameInfo Game;
-        public readonly SpeciesRandomizer Randomizer;
+        private readonly PersonalTable Personal;
+        public readonly SpeciesRandomizer RandSpec;
+        public readonly FormRandomizer RandForm;
 
         public EvolutionRandomizer(GameInfo game, EvolutionSet[] evolutions, PersonalTable t)
         {
             Game = game;
+            Personal = t;
             Evolutions = evolutions;
-            Randomizer = new SpeciesRandomizer(Game, t);
+            RandSpec = new SpeciesRandomizer(Game, t);
+            RandForm = new FormRandomizer(t);
         }
 
         public override void Execute()
@@ -23,6 +27,8 @@ namespace pkNX.Randomization
             for (var i = 0; i < Evolutions.Length; i++)
             {
                 var evo = Evolutions[i];
+                if (Personal[i].HP == 0)
+                    continue;
                 Randomize(evo, i);
             }
         }
@@ -36,13 +42,26 @@ namespace pkNX.Randomization
             }
         }
 
+        public void ExecuteEvolveEveryLevel()
+        {
+            for (var i = 0; i < Evolutions.Length; i++)
+            {
+                var evo = Evolutions[i];
+                if (Personal[i].HP == 0)
+                    continue;
+                Personal[i].EXPGrowth = (int)EXPGroup.Slow; // keep everything the same to preserve levels after evolving
+                MakeEvolveEveryLevel(evo, i);
+            }
+        }
+
         private void Randomize(EvolutionSet evos, int species)
         {
             foreach (var evo in evos.PossibleEvolutions)
             {
                 if (evo.Method != 0)
                 {
-                    evo.Species = Randomizer.GetRandomSpecies(evo.Species, species);
+                    evo.Species = RandSpec.GetRandomSpecies(evo.Species, species);
+                    evo.Form = RandForm.GetRandomForme(evo.Species, false, false, true, Game.SWSH, Personal.Table);
                 }
             }
         }
@@ -64,7 +83,7 @@ namespace pkNX.Randomization
                     evo.Method = EvolutionType.LevelUp; // trade -> level up
                     evo.Argument = 30;
                     return;
-                case EvolutionType.Trade when Game.Generation == 7:
+                case EvolutionType.Trade when Game.Generation >= 7:
                     evo.Method = EvolutionType.LevelUp; // trade -> level up
                     evo.Level = 30;
                     return;
@@ -73,10 +92,10 @@ namespace pkNX.Randomization
                     return;
                 case EvolutionType.TradeSpecies:
                     evo.Method = EvolutionType.LevelUpWithTeammate;
-                    if (species == 588)
-                        evo.Argument = 616; // Karrablast with Shelmet
-                    if (species == 616)
-                        evo.Argument = 588; // Shelmet with Karrablast
+                    if (species == (int)Species.Karrablast)
+                        evo.Argument = (int)Species.Shelmet; // Karrablast with Shelmet
+                    if (species == (int)Species.Shelmet)
+                        evo.Argument = (int)Species.Karrablast; // Shelmet with Karrablast
                     return;
 
                 case EvolutionType.LevelUpVersion:
@@ -91,6 +110,27 @@ namespace pkNX.Randomization
                     evo.Method = EvolutionType.LevelUpFriendshipNight;
                     evo.Argument = 0; // clear ver
                     return;
+            }
+        }
+
+        private void MakeEvolveEveryLevel(EvolutionSet evos, int species)
+        {
+            var evoSet = evos.PossibleEvolutions;
+            var evoNew = new EvolutionMethod()
+            {
+                Argument = 0, // clear
+                Form = 0, // randomized later
+                Level = 1,
+                Method = EvolutionType.LevelUp,
+                Species = species, // randomized later
+            };
+
+            evoSet[0] = evoNew;
+
+            if (evoSet[1].HasData) // has other branched evolutions; remove them
+            {
+                for (int i = 1; i < evoSet.Length; i++)
+                    evoSet[i] = new EvolutionMethod();
             }
         }
     }

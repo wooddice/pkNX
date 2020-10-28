@@ -21,6 +21,7 @@ namespace pkNX.Structures
         public bool SM { get; private set; }
         public bool USUM { get; private set; }
         public bool GG { get; private set; }
+        public bool SWSH { get; private set; }
 
         public GameInfo(GameVersion game)
         {
@@ -31,18 +32,20 @@ namespace pkNX.Structures
 
         private Action GetInitMethod(GameVersion game)
         {
-            switch (game)
+            return game switch
             {
-                case GameVersion.XY: return LoadXY;
-                case GameVersion.ORASDEMO:
-                case GameVersion.ORAS: return LoadAO;
-                case GameVersion.SMDEMO:
-                case GameVersion.SM: return LoadSM;
-                case GameVersion.USUM: return LoadUSUM;
-                case GameVersion.GG: return LoadGG;
-                default:
-                    throw new ArgumentException(nameof(game));
-            }
+                GameVersion.XY => (Action) LoadXY,
+                GameVersion.ORASDEMO => LoadAO,
+                GameVersion.ORAS => LoadAO,
+                GameVersion.SMDEMO => LoadSM,
+                GameVersion.SM => LoadSM,
+                GameVersion.USUM => LoadUSUM,
+                GameVersion.GG => LoadGG,
+                GameVersion.SW => LoadSWSH,
+                GameVersion.SH => LoadSWSH,
+                GameVersion.SWSH => LoadSWSH,
+                _ => throw new ArgumentException(nameof(game))
+            };
         }
 
         private void LoadXY()
@@ -93,6 +96,16 @@ namespace pkNX.Structures
             MaxItemID = Legal.MaxItemID_7_GG;
             HeldItems = new ushort[1];
             MaxAbilityID = Legal.MaxAbilityID_7_GG;
+        }
+
+        private void LoadSWSH()
+        {
+            SWSH = true;
+            MaxSpeciesID = Legal.MaxSpeciesID_8;
+            MaxMoveID = Legal.MaxMoveID_8;
+            MaxItemID = Legal.MaxItemID_8;
+            HeldItems = Legal.HeldItems_SWSH;
+            MaxAbilityID = Legal.MaxAbilityID_8;
         }
     }
 }

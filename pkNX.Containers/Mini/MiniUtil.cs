@@ -14,7 +14,7 @@ namespace pkNX.Containers
         {
             byte[][] fileData = new byte[files.Length][];
             for (int i = 0; i < fileData.Length; i++)
-                fileData[i] = File.ReadAllBytes(files[i]);
+                fileData[i] = FileMitm.ReadAllBytes(files[i]);
             return PackMini(fileData, identifier);
         }
 
@@ -30,43 +30,39 @@ namespace pkNX.Containers
             int dataOffset = 4 + 4 + (count * 4);
 
             // Start the data filling.
-            using (MemoryStream dataout = new MemoryStream())
-            using (MemoryStream offsetMap = new MemoryStream())
-            using (BinaryWriter bd = new BinaryWriter(dataout))
-            using (BinaryWriter bo = new BinaryWriter(offsetMap))
+            using MemoryStream dataout = new MemoryStream();
+            using MemoryStream offsetMap = new MemoryStream();
+            using BinaryWriter bd = new BinaryWriter(dataout);
+            using BinaryWriter bo = new BinaryWriter(offsetMap);
+            // For each file...
+            for (int i = 0; i < count; i++)
             {
-                // For each file...
-                for (int i = 0; i < count; i++)
-                {
-                    // Write File Offset
-                    uint fileOffset = (uint)(dataout.Position + dataOffset);
-                    bo.Write(fileOffset);
+                // Write File Offset
+                uint fileOffset = (uint)(dataout.Position + dataOffset);
+                bo.Write(fileOffset);
 
-                    // Write File to Stream
-                    bd.Write(fileData[i]);
+                // Write File to Stream
+                bd.Write(fileData[i]);
 
-                    // Pad the Data MemoryStream with Zeroes until len%4=0;
-                    while (dataout.Length % 4 != 0)
-                        bd.Write((byte)0);
-                    // File Offset will be updated as the offset is based off of the Data length.
-                }
-                // Cap the File
-                bo.Write((uint)(dataout.Position + dataOffset));
-
-                using (var newPack = new MemoryStream())
-                using (var header = new MemoryStream(data))
-                {
-                    header.WriteTo(newPack);
-                    offsetMap.WriteTo(newPack);
-                    dataout.WriteTo(newPack);
-                    return newPack.ToArray();
-                }
+                // Pad the Data MemoryStream with Zeroes until len%4=0;
+                while (dataout.Length % 4 != 0)
+                    bd.Write((byte)0);
+                // File Offset will be updated as the offset is based off of the Data length.
             }
+            // Cap the File
+            bo.Write((uint)(dataout.Position + dataOffset));
+
+            using var newPack = new MemoryStream();
+            using var header = new MemoryStream(data);
+            header.WriteTo(newPack);
+            offsetMap.WriteTo(newPack);
+            dataout.WriteTo(newPack);
+            return newPack.ToArray();
         }
 
         public static byte[][] UnpackMini(string file, string identifier = null)
         {
-            byte[] fileData = File.ReadAllBytes(file);
+            byte[] fileData = FileMitm.ReadAllBytes(file);
             return UnpackMini(fileData, identifier);
         }
 
@@ -98,15 +94,16 @@ namespace pkNX.Containers
 
         public static Mini GetMini(string path)
         {
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
-            using (var br = new BinaryReader(fs))
-                return GetMini(br);
+            path = FileMitm.GetRedirectedReadPath(path);
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+            using var br = new BinaryReader(fs);
+            return GetMini(br);
         }
 
         public static Mini GetMini(BinaryReader br)
         {
             var ident = GetIsMini(br);
-            if (ident == null)
+            if (string.IsNullOrEmpty(ident))
                 return null;
 
             br.BaseStream.Position = 0;
@@ -137,22 +134,23 @@ namespace pkNX.Containers
         {
             try
             {
-                using (var fs = new FileStream(path, FileMode.Open))
-                using (var br = new BinaryReader(fs))
-                    return GetIsMini(br);
+                path = FileMitm.GetRedirectedWritePath(path);
+                using var fs = new FileStream(path, FileMode.Open);
+                using var br = new BinaryReader(fs);
+                return GetIsMini(br);
             }
-            catch { return null; }
+            catch { return string.Empty; }
         }
 
         public static string GetIsMini(byte[] data)
         {
             try
             {
-                using (var ms = new MemoryStream(data))
-                using (var br = new BinaryReader(ms))
-                    return GetIsMini(br);
+                using var ms = new MemoryStream(data);
+                using var br = new BinaryReader(ms);
+                return GetIsMini(br);
             }
-            catch { return null; }
+            catch { return string.Empty; }
         }
     }
 }

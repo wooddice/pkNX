@@ -26,79 +26,53 @@ namespace pkNX.Structures
         /// <returns>Version Group Identifier or Invalid if type cannot be determined.</returns>
         public static GameVersion GetMetLocationVersionGroup(GameVersion Version)
         {
-            switch (Version)
+            return Version switch
             {
                 // Sidegame
-                case CXD:
-                    return CXD;
-                case GO:
-                    return GO;
-
+                CXD => CXD,
+                GO => GO,
                 // Gen1
-                case RBY:
-                case RD:
-                case BU:
-                case YW:
-                case GN:
-                    return RBY;
-
+                RBY => RBY,
+                RD => RBY,
+                BU => RBY,
+                YW => RBY,
+                GN => RBY,
                 // Gen2
-                case GS:
-                case GD:
-                case SV:
-                case C:
-                    return GSC;
-
+                GS => GSC,
+                GD => GSC,
+                SV => GSC,
+                C => GSC,
                 // Gen3
-                case R:
-                case S:
-                    return RS;
-                case E:
-                    return E;
-                case FR:
-                case LG:
-                    return FR;
-
+                R => RS,
+                S => RS,
+                E => E,
+                FR => FR,
+                LG => FR,
                 // Gen4
-                case D:
-                case P:
-                    return DP;
-                case Pt:
-                    return Pt;
-                case HG:
-                case SS:
-                    return HGSS;
-
+                D => DP,
+                P => DP,
+                Pt => Pt,
+                HG => HGSS,
+                SS => HGSS,
                 // Gen5
-                case B:
-                case W:
-                    return BW;
-                case B2:
-                case W2:
-                    return B2W2;
-
+                B => BW,
+                W => BW,
+                B2 => B2W2,
+                W2 => B2W2,
                 // Gen6
-                case X:
-                case Y:
-                    return XY;
-                case OR:
-                case AS:
-                    return ORAS;
-
+                X => XY,
+                Y => XY,
+                OR => ORAS,
+                AS => ORAS,
                 // Gen7
-                case SN:
-                case MN:
-                    return SM;
-                case US:
-                case UM:
-                    return USUM;
-                case GP:
-                case GE:
-                    return GG;
-
-                default:
-                    return Invalid;
-            }
+                SN => SM,
+                MN => SM,
+                US => USUM,
+                UM => USUM,
+                GP => GG,
+                GE => GG,
+                _ => Invalid
+            };
         }
 
         /// <summary>
@@ -108,18 +82,17 @@ namespace pkNX.Structures
         /// <returns>Version ID from requested generation. If none, return <see cref="Invalid"/>.</returns>
         public static GameVersion GetVersion(int generation)
         {
-            switch (generation)
+            return generation switch
             {
-                case 1: return RBY;
-                case 2: return C;
-                case 3: return E;
-                case 4: return SS;
-                case 5: return W2;
-                case 6: return AS;
-                case 7: return UM;
-                default:
-                    return Invalid;
-            }
+                1 => RBY,
+                2 => C,
+                3 => E,
+                4 => SS,
+                5 => W2,
+                6 => AS,
+                7 => UM,
+                _ => Invalid
+            };
         }
 
         /// <summary>
@@ -136,6 +109,7 @@ namespace pkNX.Structures
             if (Gen5.Contains(game)) return 5;
             if (Gen6.Contains(game)) return 6;
             if (Gen7.Contains(game)) return 7;
+            if (Gen8.Contains(game)) return 8;
             return -1;
         }
 
@@ -160,6 +134,7 @@ namespace pkNX.Structures
                     return 807;
                 return Legal.MaxSpeciesID_7_GG;
             }
+            if (Gen8.Contains(game)) return Legal.MaxSpeciesID_8;
             return -1;
         }
 
@@ -177,6 +152,9 @@ namespace pkNX.Structures
         /// <param name="g2">Individual version</param>
         public static bool Contains(this GameVersion g1, GameVersion g2)
         {
+            if (g1 == g2 || g1 == Any)
+                return true;
+
             if (g1 == g2 || g1 == Any)
                 return true;
 
@@ -236,9 +214,13 @@ namespace pkNX.Structures
                 case USUM:
                     return g2 == US || g2 == UM;
                 case GG:
-                    return g2 == GP || g2 == GE;
+                    return g2 == GP || g2 == GE || g2 == GO;
                 case Gen7:
                     return SM.Contains(g2) || USUM.Contains(g2) || GG.Contains(g2);
+
+                case Gen8:
+                case SWSH:
+                    return g2 == SW || g2 == SH;
 
                 default: return false;
             }

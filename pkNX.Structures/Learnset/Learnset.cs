@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace pkNX.Structures
 {
@@ -77,6 +78,20 @@ namespace pkNX.Structures
         {
             int index = Array.IndexOf(Moves, move);
             return index < 0 ? index : Levels[index];
+        }
+
+        public void Update(int[] moves, int[] levels)
+        {
+            Moves = moves;
+            Levels = levels;
+            Count = Moves.Length;
+        }
+
+        public int[] GetHighPoweredMoves(int count, IReadOnlyList<Move> movedata)
+        {
+            var moves = Moves.OrderByDescending(move => movedata[move].Power).Distinct().Take(count).ToArray();
+            Array.Resize(ref moves, count);
+            return moves;
         }
     }
 }

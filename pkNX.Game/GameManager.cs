@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using pkNX.Containers;
 using pkNX.Structures;
 
@@ -8,16 +7,31 @@ namespace pkNX.Game
     /// <summary>
     /// Manages fetching of game data.
     /// </summary>
-    public sealed class GameManager
+    public abstract class GameManager
     {
-        private readonly GameLocation ROM;
-        private readonly TextManager Text; // GameText
-        private readonly GameFileMapping FileMap;
+        protected readonly GameLocation ROM;
+        protected readonly TextManager Text; // GameText
+        protected readonly GameFileMapping FileMap;
+        public readonly GameInfo Info;
+        private int _language;
+
+        public string PathExeFS => ROM.ExeFS;
+        public string PathRomFS => ROM.RomFS;
 
         /// <summary>
         /// Language to use when fetching string &amp; graphic assets.
         /// </summary>
-        public int Language { get; set; }
+        public int Language
+        {
+            get => _language;
+            set
+            {
+                if (value == _language)
+                    return;
+                _language = value;
+                Text?.ClearCache();
+            }
+        }
 
         /// <summary>
         /// Current <see cref="GameVersion"/> the data represents.
@@ -27,20 +41,22 @@ namespace pkNX.Game
         /// <summary>
         /// Generally useful game data that can be used by multiple editors.
         /// </summary>
-        public GameData Data { get; private set; }
+        public GameData Data { get; protected set; }
 
         /// <summary>
         /// Initializes a new <see cref="GameManager"/> for the input <see cref="GameLocation"/> with initial <see cref="Language"/>.
         /// </summary>
         /// <param name="rom"></param>
         /// <param name="language"></param>
-        public GameManager(GameLocation rom, int language)
+        protected GameManager(GameLocation rom, int language)
         {
             ROM = rom;
             Language = language;
             FileMap = new GameFileMapping(rom);
+            SetMitm();
             Initialize();
             Text = new TextManager(Game);
+            Info = new GameInfo(Game);
         }
 
         /// <summary>
@@ -76,40 +92,32 @@ namespace pkNX.Game
         /// <param name="closing">Skip re-initialization of game data.</param>
         public void SaveAll(bool closing)
         {
+            Terminate();
             FileMap.SaveAll();
             if (!closing)
                 Initialize();
         }
 
-        private void Initialize()
-        {
-            if (ROM.Game == GameVersion.GG)
-                InitializeDataGG();
-        }
-
-        private void InitializeDataGG()
-        {
-            // initialize gametext
-            GetFilteredFolder(GameFile.GameText, z => Path.GetExtension(z) == ".dat");
-
-            // initialize common structures
-            Data = new GameData
-            {
-                MoveData = this[GameFile.MoveStats].GetFiles().GetArray(z => (Move)new Move7(z)), // mini
-                LevelUpData = this[GameFile.Learnsets].GetFiles().GetArray(z => (Learnset)new Learnset6(z)), // gfpak
-
-                // folders
-                PersonalData = new PersonalTable(GetFilteredFolder(GameFile.PersonalStats, z => Path.GetFileNameWithoutExtension(z) == "personal_total").GetFiles().Result[0], Game),
-                MegaEvolutionData = new MegaEvolutionTable(GetFilteredFolder(GameFile.MegaEvolutions).GetFiles().Result),
-                EvolutionData = GetFilteredFolder(GameFile.Evolutions).GetFiles().GetArray(z => (EvolutionSet)new EvolutionSet7(z)),
-            };
-        }
+        protected abstract void Initialize();
+        protected abstract void Terminate();
+        protected abstract void SetMitm();
 
         public FolderContainer GetFilteredFolder(GameFile type, Func<string, bool> filter = null)
         {
             var c = (FolderContainer)this[type];
             c.Initialize(filter);
             return c;
+        }
+
+        public static GameManager GetManager(GameLocation loc, int language)
+        {
+            return loc.Game switch
+            {
+                GameVersion.GG => (GameManager)new GameManagerGG(loc, language),
+                GameVersion.SW => new GameManagerSWSH(loc, language),
+                GameVersion.SH => new GameManagerSWSH(loc, language),
+                _ => throw new ArgumentException(nameof(loc.Game))
+            };
         }
     }
 }

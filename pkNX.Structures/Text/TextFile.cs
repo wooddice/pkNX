@@ -8,6 +8,8 @@ namespace pkNX.Structures
 {
     public class TextFile
     {
+        public bool SETEMPTYTEXT { get; set; } = true;
+
         // Text Formatting Config
         private const ushort KEY_BASE = 0x7C89;
         private const ushort KEY_ADVANCE = 0x2983;
@@ -17,7 +19,6 @@ namespace pkNX.Structures
         private const ushort KEY_TEXTCLEAR = 0xBE01;
         private const ushort KEY_TEXTWAIT = 0xBE02;
         private const ushort KEY_TEXTNULL = 0xBDFF;
-        private const bool SETEMPTYTEXT = true;
         private static readonly byte[] emptyTextFile = { 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00 };
 
         public TextFile(byte[] data = null, TextConfig config = null, bool remapChars = false)
@@ -76,17 +77,14 @@ namespace pkNX.Structures
             }
         }
 
-        public byte[] this[int index]
+        public byte[] GetEncryptedLine(int index)
         {
-            get
-            {
-                ushort key = GetLineKey(index);
-                var line = LineOffsets[index];
-                byte[] EncryptedLineData = new byte[line.Length * 2];
-                Array.Copy(Data, line.Offset, EncryptedLineData, 0, EncryptedLineData.Length);
+            ushort key = GetLineKey(index);
+            var line = LineOffsets[index];
+            byte[] EncryptedLineData = new byte[line.Length * 2];
+            Array.Copy(Data, line.Offset, EncryptedLineData, 0, EncryptedLineData.Length);
 
-                return CryptLineData(EncryptedLineData, key);
-            }
+            return CryptLineData(EncryptedLineData, key);
         }
 
         private static ushort GetLineKey(int index)
@@ -180,68 +178,74 @@ namespace pkNX.Structures
             if (line == null)
                 return new byte[2];
 
-            using (var ms = new MemoryStream())
-            using (var bw = new BinaryWriter(ms))
+            using var ms = new MemoryStream();
+            using var bw = new BinaryWriter(ms);
+            int i = 0;
+            while (i < line.Length)
             {
-                int i = 0;
-                while (i < line.Length)
-                {
-                    ushort val = line[i++];
-                    val = TryRemapChar(val);
+                ushort val = line[i++];
+                val = TryRemapChar(val);
 
-                    switch (val)
-                    {
-                        case '[':
-                            // grab the string
-                            int bracket = line.IndexOf(']', i);
-                            if (bracket < 0)
-                                throw new ArgumentException("Variable text is not capped properly: " + line);
-                            string varText = line.Substring(i, bracket - i);
-                            var varValues = GetVariableValues(varText);
-                            foreach (ushort v in varValues) bw.Write(v);
-                            i += 1 + varText.Length;
-                            break;
-                        case '\\':
-                            var escapeValues = GetEscapeValues(line[i++]);
-                            foreach (ushort v in escapeValues)
-                                bw.Write(v);
-                            break;
-                        default:
-                            bw.Write(val);
-                            break;
-                    }
+                switch (val)
+                {
+                    case '[':
+                        // grab the string
+                        int bracket = line.IndexOf(']', i);
+                        if (bracket < 0)
+                            throw new ArgumentException("Variable text is not capped properly: " + line);
+                        string varText = line.Substring(i, bracket - i);
+                        var varValues = GetVariableValues(varText);
+                        foreach (ushort v in varValues) bw.Write(v);
+                        i += 1 + varText.Length;
+                        break;
+                    case '\\':
+                        var escapeValues = GetEscapeValues(line[i++]);
+                        foreach (ushort v in escapeValues)
+                            bw.Write(v);
+                        break;
+                    default:
+                        bw.Write(val);
+                        break;
                 }
-                bw.Write(KEY_TERMINATOR); // cap the line off
-                return ms.ToArray();
             }
+            bw.Write(KEY_TERMINATOR); // cap the line off
+            return ms.ToArray();
         }
 
         private ushort TryRemapChar(ushort val)
         {
             if (!RemapChars)
                 return val;
-            switch (val)
+            return val switch
             {
-                case 0x202F: return 0xE07F; // nbsp
-                case 0x2026: return 0xE08D; // …
-                case 0x2642: return 0xE08E; // ♂
-                case 0x2640: return 0xE08F; // ♀
-                default: return val;
-            }
+                0x202F => 0xE07F // nbsp
+                ,
+                0x2026 => 0xE08D // …
+                ,
+                0x2642 => 0xE08E // ♂
+                ,
+                0x2640 => 0xE08F // ♀
+                ,
+                _ => val
+            };
         }
 
         private ushort TryUnmapChar(ushort val)
         {
             if (!RemapChars)
                 return val;
-            switch (val)
+            return val switch
             {
-                case 0xE07F: return 0x202F; // nbsp
-                case 0xE08D: return 0x2026; // …
-                case 0xE08E: return 0x2642; // ♂
-                case 0xE08F: return 0x2640; // ♀
-                default: return val;
-            }
+                0xE07F => 0x202F // nbsp
+                ,
+                0xE08D => 0x2026 // …
+                ,
+                0xE08E => 0x2642 // ♂
+                ,
+                0xE08F => 0x2640 // ♀
+                ,
+                _ => val
+            };
         }
 
         private string GetLineString(byte[] data)
@@ -309,7 +313,7 @@ namespace pkNX.Structures
             return s.ToString();
         }
 
-        private IEnumerable<ushort> GetEscapeValues(char esc)
+        private static IEnumerable<ushort> GetEscapeValues(char esc)
         {
             var vals = new List<ushort>();
             switch (esc)

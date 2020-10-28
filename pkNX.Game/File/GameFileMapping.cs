@@ -54,19 +54,21 @@ namespace pkNX.Game
 
         public static IReadOnlyCollection<GameFileReference> GetMapping(GameVersion game)
         {
-            switch (game)
+            return game switch
             {
-                case GameVersion.SN: return SN;
-                case GameVersion.MN: return MN;
-                case GameVersion.US: return US;
-                case GameVersion.UM: return UM;
-                case GameVersion.XY: return XY;
-                case GameVersion.GG: return GG;
-                case GameVersion.ORASDEMO:
-                case GameVersion.ORAS: return AO;
-                case GameVersion.SMDEMO: return SMDEMO;
-            }
-            return null;
+                GameVersion.SN => SN,
+                GameVersion.MN => MN,
+                GameVersion.US => US,
+                GameVersion.UM => UM,
+                GameVersion.XY => XY,
+                GameVersion.GG => GG,
+                GameVersion.SW => SW,
+                GameVersion.SH => SH,
+                GameVersion.ORASDEMO => AO,
+                GameVersion.ORAS => AO,
+                GameVersion.SMDEMO => SMDEMO,
+                _ => null
+            };
         }
 
         #region Games
@@ -332,13 +334,78 @@ namespace pkNX.Game
             new GameFileReference(GameFile.MegaEvolutions, "bin", "pokelib", "mega_evolution"),
             new GameFileReference(GameFile.MoveStats, ContainerType.Mini, "bin", "pokelib", "waza", "waza_data.bin"),
             new GameFileReference(GameFile.EncounterStatic, ContainerType.SingleFile, "bin", "script_event_data", "event_encount.bin"),
-            new GameFileReference(GameFile.EncounterTrade, ContainerType.SingleFile, "bin", "script_event_data", "field_trade_data"),
+            new GameFileReference(GameFile.EncounterTrade, ContainerType.SingleFile, "bin", "script_event_data", "field_trade_data.bin"),
+            new GameFileReference(GameFile.EncounterGift, ContainerType.SingleFile, "bin", "script_event_data", "add_poke.bin"),
             new GameFileReference(GameFile.Learnsets, ContainerType.GFPack, "bin", "archive", "waza_oboe.gfpak"),
+
+            new GameFileReference(GameFile.WildData1, ContainerType.SingleFile, "bin", "field", "param", "encount", "encount_data_p.bin"),
+            new GameFileReference(GameFile.WildData2, ContainerType.SingleFile, "bin", "field", "param", "encount", "encount_data_e.bin"),
 
             // Cutscenes    bin\demo
             // Models       bin\archive\pokemon
             // pretty much everything is obviously named :)
         };
+
+        /// <summary>
+        /// Sword
+        /// </summary>
+        private static readonly GameFileReference[] SW =
+        {
+            new GameFileReference(GameFile.TrainerData, "bin", "trainer", "trainer_data"),
+            new GameFileReference(GameFile.TrainerPoke, "bin", "trainer", "trainer_poke"),
+            new GameFileReference(GameFile.TrainerClass, "bin", "trainer", "trainer_type"),
+
+            new GameFileReference(GameFile.GameText0, 0, "bin", "message", "JPN", "common"),
+            new GameFileReference(GameFile.GameText1, 1, "bin", "message", "JPN_KANJI", "common"),
+            new GameFileReference(GameFile.GameText2, 2, "bin", "message", "English", "common"),
+            new GameFileReference(GameFile.GameText3, 3, "bin", "message", "French", "common"),
+            new GameFileReference(GameFile.GameText4, 4, "bin", "message", "Italian", "common"),
+            new GameFileReference(GameFile.GameText5, 5, "bin", "message", "German", "common"),
+            // 6 unused lang
+            new GameFileReference(GameFile.GameText6, 7, "bin", "message", "Spanish", "common"),
+            new GameFileReference(GameFile.GameText7, 8, "bin", "message", "Korean", "common"),
+            new GameFileReference(GameFile.GameText8, 9, "bin", "message", "Simp_Chinese", "common"),
+            new GameFileReference(GameFile.GameText9, 10, "bin", "message", "Trad_Chinese", "common"),
+
+            new GameFileReference(GameFile.StoryText0, 0, "bin", "message", "JPN", "script"),
+            new GameFileReference(GameFile.StoryText1, 1, "bin", "message", "JPN_KANJI", "script"),
+            new GameFileReference(GameFile.StoryText2, 2, "bin", "message", "English", "script"),
+            new GameFileReference(GameFile.StoryText3, 3, "bin", "message", "French", "script"),
+            new GameFileReference(GameFile.StoryText4, 4, "bin", "message", "Italian", "script"),
+            new GameFileReference(GameFile.StoryText5, 5, "bin", "message", "German", "script"),
+            // 6 unused lang
+            new GameFileReference(GameFile.StoryText6, 7, "bin", "message", "Spanish", "script"),
+            new GameFileReference(GameFile.StoryText7, 8, "bin", "message", "Korean", "script"),
+            new GameFileReference(GameFile.StoryText8, 9, "bin", "message", "Simp_Chinese", "script"),
+            new GameFileReference(GameFile.StoryText9, 10, "bin", "message", "Trad_Chinese", "script"),
+
+            new GameFileReference(GameFile.ItemStats, ContainerType.SingleFile, "bin", "pml", "item", "item.dat"),
+            new GameFileReference(GameFile.Evolutions, "bin", "pml", "evolution"),
+            new GameFileReference(GameFile.EggMoves, "bin", "pml", "tamagowaza"),
+            new GameFileReference(GameFile.PersonalStats, "bin", "pml", "personal"),
+            new GameFileReference(GameFile.MoveStats, "bin", "pml", "waza"),
+            new GameFileReference(GameFile.EncounterStatic, ContainerType.SingleFile, "bin", "script_event_data", "event_encount_data.bin"),
+            new GameFileReference(GameFile.EncounterTrade, ContainerType.SingleFile, "bin", "script_event_data", "field_trade.bin"),
+            new GameFileReference(GameFile.EncounterGift, ContainerType.SingleFile, "bin", "script_event_data", "add_poke.bin"),
+            new GameFileReference(GameFile.Learnsets, ContainerType.SingleFile, "bin", "pml", "waza_oboe", "wazaoboe_total.bin"),
+
+            new GameFileReference(GameFile.FacilityPokeNormal, ContainerType.SingleFile, "bin", "field", "param", "battle_tower", "battle_tower_poke_table.bin"),
+            new GameFileReference(GameFile.FacilityTrainerNormal, ContainerType.SingleFile, "bin", "field", "param", "battle_tower", "battle_tower_trainer_table.bin"),
+
+            new GameFileReference(GameFile.WildData, ContainerType.SingleFile, "bin", "archive", "field", "resident", "data_table.gfpak"),
+            new GameFileReference(GameFile.NestData, ContainerType.SingleFile, "bin", "archive", "field", "resident", "data_table.gfpak"),
+
+            new GameFileReference(GameFile.DynamaxDens, ContainerType.SingleFile, "bin", "appli", "chika", "data_table", "underground_exploration_poke.bin"),
+
+            // Cutscenes    bin\demo
+            // Models       bin\archive\pokemon
+            // pretty much everything is obviously named :)
+        };
+
+        /// <summary>
+        /// Shield
+        /// </summary>
+        private static readonly GameFileReference[] SH = SW;
         #endregion
 
         #region Split Versions

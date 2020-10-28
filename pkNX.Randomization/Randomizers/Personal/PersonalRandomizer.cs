@@ -322,7 +322,7 @@ namespace pkNX.Randomization
                 t[i] = Rand.Next(100) < Settings.LearnTypeTutorPercent;
 
             // Make sure Rayquaza can learn Dragon Ascent.
-            if (!Game.XY && species == 384)
+            if (!Game.XY && species == (int)Species.Rayquaza)
                 t[7] = true;
 
             z.TypeTutors = t;
@@ -390,25 +390,24 @@ namespace pkNX.Randomization
                     continue;
 
                 var val = stats[i] * RandDeviation() / 100;
-                var stat = Math.Max(1, Math.Min(255, val));
+                stats[i] = Math.Max(1, Math.Min(255, val));
             }
             z.Stats = stats;
         }
 
-        private void RandomShuffledStats(PersonalInfo z)
+        private static void RandomShuffledStats(PersonalInfo z)
         {
             // Fiddle with Base Stats, don't muck with Shedinja.
             var stats = z.Stats;
             if (stats[0] == 1)
                 return;
-            for (int i = 0; i < stats.Length; i++)
-                Util.Shuffle(stats);
+            Util.Shuffle(stats);
             z.Stats = stats;
         }
 
         private int GetRandomType() => Rand.Next(0, TypeCount);
         private int GetRandomEggGroup() => Rand.Next(1, eggGroupCount);
-        private int GetRandomHeldItem() => Game.HeldItems[Rand.Next(1, Game.HeldItems.Length)];
+        private int GetRandomHeldItem() => Game.HeldItems.Length > 1 ? Game.HeldItems[Rand.Next(1, Game.HeldItems.Length)] : 0;
         private readonly IList<int> BannedAbilities = Array.Empty<int>();
 
         private int GetRandomAbility()

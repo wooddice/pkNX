@@ -36,23 +36,28 @@ namespace pkNX.WinForms
         private void B_Export_Click(object sender, EventArgs e)
         {
             if (TextData.Length <= 0) return;
-            SaveFileDialog Dump = new SaveFileDialog {Filter = "Text File|*.txt"};
-            DialogResult sdr = Dump.ShowDialog();
-            if (sdr != DialogResult.OK) return;
-            bool newline = WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Remove newline formatting codes? (\\n,\\r,\\c)", "Removing newline formatting will make it more readable but will prevent any importing of that dump.") == DialogResult.Yes;
-            string path = Dump.FileName;
+            using var dump = new SaveFileDialog {Filter = "Text File|*.txt"};
+            if (dump.ShowDialog() != DialogResult.OK)
+                return;
+
+            var result = WinFormsUtil.Prompt(MessageBoxButtons.YesNo,
+                "Remove newline formatting codes? (\\n,\\r,\\c)",
+                "Removing newline formatting will make it more readable but will prevent any importing of that dump.");
+            bool newline = result == DialogResult.Yes;
+            string path = dump.FileName;
             ExportTextFile(path, newline, TextData);
         }
 
         private void B_Import_Click(object sender, EventArgs e)
         {
             if (TextData.Length <= 0) return;
-            OpenFileDialog Dump = new OpenFileDialog { Filter = "Text File|*.txt" };
-            DialogResult odr = Dump.ShowDialog();
-            if (odr != DialogResult.OK) return;
-            string path = Dump.FileName;
+            using var dump = new OpenFileDialog { Filter = "Text File|*.txt" };
+            if (dump.ShowDialog() != DialogResult.OK)
+                return;
 
-            if (!ImportTextFiles(path)) return;
+            string path = dump.FileName;
+            if (!ImportTextFiles(path))
+                return;
 
             // Reload the form with the new data.
             ChangeEntry(null, null);
@@ -61,21 +66,19 @@ namespace pkNX.WinForms
 
         public static void ExportTextFile(string fileName, bool newline, TextContainer lineData)
         {
-            using (MemoryStream ms = new MemoryStream())
+            using MemoryStream ms = new MemoryStream();
+            ms.Write(new byte[] {0xFF, 0xFE}, 0, 2); // Write Unicode BOM
+            using (TextWriter tw = new StreamWriter(ms, new UnicodeEncoding()))
             {
-                ms.Write(new byte[] {0xFF, 0xFE}, 0, 2); // Write Unicode BOM
-                using (TextWriter tw = new StreamWriter(ms, new UnicodeEncoding()))
+                for (int i = 0; i < lineData.Length; i++)
                 {
-                    for (int i = 0; i < lineData.Length; i++)
-                    {
-                        // Get Strings for the File
-                        string[] data = lineData[i];
-                        string fn = lineData.GetFileName(i);
-                        WriteTextFile(tw, fn, data, newline);
-                    }
+                    // Get Strings for the File
+                    string[] data = lineData[i];
+                    string fn = lineData.GetFileName(i);
+                    WriteTextFile(tw, fn, data, newline);
                 }
-                File.WriteAllBytes(fileName, ms.ToArray());
             }
+            File.WriteAllBytes(fileName, ms.ToArray());
         }
 
         private static void WriteTextFile(TextWriter tw, string fn, string[] data, bool newline = false)
@@ -114,9 +117,18 @@ namespace pkNX.WinForms
                 string[] brokenLine = fileText[i++ + 1].Split(new[] { " : " }, StringSplitOptions.None);
                 if (brokenLine.Length != 2)
                 { WinFormsUtil.Error($"Invalid Line @ {i}, expected Text File : {ctr}"); return false; }
-                int file = Util.ToInt32(brokenLine[1]);
-                if (file != ctr)
-                { WinFormsUtil.Error($"Invalid Line @ {i}, expected Text File : {ctr}"); return false; }
+
+                var file = brokenLine[1];
+                if (int.TryParse(file, out var fnum))
+                {
+                    if (fnum != ctr)
+                    {
+                        WinFormsUtil.Error($"Invalid Line @ {i}, expected Text File : {ctr}");
+                        return false;
+                    }
+                }
+                // else pray that the filename index lines up
+
                 i += 2; // Skip over the other header line
                 List<string> Lines = new List<string>();
                 while (i < fileText.Length && fileText[i] != "~~~~~~~~~~~~~~~")
@@ -136,14 +148,16 @@ namespace pkNX.WinForms
                 $"Received: {ctr}, Expected: {TextData.Length}"); return false; }
             if (!newlineFormatting)
             {
-                WinFormsUtil.Error("The input Text Files do not have the ingame newline formatting codes (\\n,\\r,\\c).",
+                WinFormsUtil.Error("The input Text Files do not have the in-game newline formatting codes (\\n,\\r,\\c).",
                       "When exporting text, do not remove newline formatting."); return false; }
 
             // All Text Lines received. Store all back.
             for (int i = 0; i < TextData.Length; i++)
             {
                 try { TextData[i] = textLines[i]; }
+#pragma warning disable CA1031 // Do not catch general exception types
                 catch (Exception e) { WinFormsUtil.Error($"The input Text File (# {i}) failed to convert:", e.ToString()); return false; }
+#pragma warning restore CA1031 // Do not catch general exception types
             }
 
             return true;
@@ -158,7 +172,9 @@ namespace pkNX.WinForms
                 {
                     TextData[entry] = GetCurrentDGLines();
                 }
+#pragma warning disable CA1031 // Do not catch general exception types
                 catch (Exception ex) { WinFormsUtil.Error(ex.ToString()); }
+#pragma warning restore CA1031 // Do not catch general exception types
             }
 
             // Reset
@@ -220,7 +236,9 @@ namespace pkNX.WinForms
         {
             int currentRow = 0;
             try { currentRow = dgv.CurrentRow.Index; }
+#pragma warning disable CA1031 // Do not catch general exception types
             catch { dgv.Rows.Add(); }
+#pragma warning restore CA1031 // Do not catch general exception types
             if (dgv.Rows.Count != 1 && (currentRow < dgv.Rows.Count - 1 || currentRow == 0))
             {
                 if (ModifierKeys != Keys.Control && currentRow != 0)
@@ -268,7 +286,7 @@ namespace pkNX.WinForms
 
             // get if the user wants to randomize current text file or all files
             var dr = WinFormsUtil.Prompt(MessageBoxButtons.YesNoCancel,
-                $"Yes: Randomize ALL{Environment.NewLine}No: Randomize current textfile{Environment.NewLine}Cancel: Abort");
+                $"Yes: Randomize ALL{Environment.NewLine}No: Randomize current Text File{Environment.NewLine}Cancel: Abort");
 
             if (dr == DialogResult.Cancel)
                 return;

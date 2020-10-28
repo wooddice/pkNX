@@ -26,6 +26,7 @@ namespace pkNX.Containers
             IEnumerable<string> files = Directory.GetFiles(FilePath, "*", SearchOption.AllDirectories);
             if (filter != null)
                 files = files.Where(filter);
+            files = files.OrderBy(z => Path.GetFileName(z).Length); // alphabetical sorting doesn't play nice with 100 & 1000
             AddFiles(files);
         }
 
@@ -48,14 +49,16 @@ namespace pkNX.Containers
             if (index < 0)
                 return null;
             string path = Paths[index];
-            return Data[index] ?? (Data[index] = File.ReadAllBytes(path));
+            var data = Data[index] ??= FileMitm.ReadAllBytes(path);
+            return (byte[])data.Clone();
         }
 
         public byte[] GetFileData(int index)
         {
             if (index < 0 || (uint)index >= Data.Count)
                 return null;
-            return Data[index] ?? (Data[index] = File.ReadAllBytes(Paths[index]));
+            var data = Data[index] ??= FileMitm.ReadAllBytes(Paths[index]);
+            return (byte[])data.Clone();
         }
 
         public byte[] this[int index]
@@ -63,8 +66,11 @@ namespace pkNX.Containers
             get => GetFileData(index);
             set
             {
-                if (value != null && Data[index] != null)
-                    TrackModify[index] = !value.SequenceEqual(Data[index]);
+                if (value != null)
+                {
+                    var current = Data[index] ??= GetFileData(index);
+                    TrackModify[index] = !value.SequenceEqual(current);
+                }
                 Data[index] = value;
             }
         }
@@ -81,7 +87,7 @@ namespace pkNX.Containers
 
         public int Count => Paths.Count;
 
-        public Task<byte[][]> GetFiles() => Task.FromResult(Paths.Select(File.ReadAllBytes).ToArray());
+        public Task<byte[][]> GetFiles() => Task.FromResult(Paths.Select(FileMitm.ReadAllBytes).ToArray());
         public Task<byte[]> GetFile(int file, int subFile = 0) => Task.FromResult(this[file]);
         public Task SetFile(int file, byte[] value, int subFile = 0) => Task.FromResult(this[file] = value);
         public Task SaveAs(string path, ContainerHandler handler, CancellationToken token) => new Task(SaveAll, token);
@@ -95,7 +101,7 @@ namespace pkNX.Containers
                 var data = Data[i];
                 if (data == null)
                     continue;
-                File.WriteAllBytes(Paths[i], data);
+                FileMitm.WriteAllBytes(Paths[i], data);
             }
         }
 

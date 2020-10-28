@@ -4,10 +4,11 @@ using System.Runtime.InteropServices;
 namespace pkNX.Structures
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct Item
+    public class Item
     {
-        public Item(byte[] data) => this = data.ToStructure<Item>();
-        public byte[] Write() => this.ToBytes();
+        public byte[] Write() => this.ToBytesClass();
+        public static Item FromBytes(byte[] data) => data.ToClass<Item>();
+
         private const string Battle = "Battle";
         private const string Field = "Field";
         private const string Mart = "Mart";
@@ -34,7 +35,7 @@ namespace pkNX.Structures
 
         public byte _0xC { get; set; } // 0 or 1
         public byte _0xD { get; set; } // Classification (0-3 Battle, 4 Balls, 5 Mail)
-        public byte Consumable { get; set; }
+        private byte Consumable { get; set; }
         public byte SortIndex { get; set; }
         public BattleStatusFlags CureInflict { get; set; } // Bitflags
         private byte Boost0; // Revive 1, Sacred Ash 3, Rare Candy 5, EvoStone 8, upper4 for BoostAtk
@@ -95,8 +96,17 @@ namespace pkNX.Structures
         [Category(Battle)]
         public BattlePocket PocketBattle { get => (BattlePocket)(Packed >> 11); set => Packed = (ushort)((Packed & 0x077F) | (((byte)value & 0x1F) << 11)); }
 
-        [Category(Battle)]
-        public int FieldEffect { get => Boost0 & 0xF; set => Boost0 = (byte)((Boost0 & ~0xF) | (value & 0xF)); }
+        [Category(Field)]
+        public bool Revive { get => ((Boost0 >> 0) & 1) == 0; set => Boost0 = (byte)((Boost0 & ~(1 << 0)) | ((value ? 1 : 0) << 0)); }
+
+        [Category(Field)]
+        public bool ReviveAll { get => ((Boost0 >> 1) & 1) == 1; set => Boost0 = (byte)((Boost0 & ~(1 << 1)) | ((value ? 1 : 0) << 1)); }
+
+        [Category(Field)]
+        public bool LevelUp { get => ((Boost0 >> 2) & 1) == 1; set => Boost0 = (byte)((Boost0 & ~(1 << 2)) | ((value ? 1 : 0) << 2)); }
+
+        [Category(Field)]
+        public bool EvoStone { get => ((Boost0 >> 3) & 1) == 1; set => Boost0 = (byte)((Boost0 & ~(1 << 3)) | ((value ? 1 : 0) << 3)); }
 
         [Category(Battle)]
         public int BoostATK { get => Boost0 >> 4; set => Boost0 = (byte)((Boost0 & 0xF) | (value << 4)); }
@@ -114,13 +124,16 @@ namespace pkNX.Structures
         public int BoostSPE { get => Boost2 >> 4; set => Boost2 = (byte)((Boost2 & 0xF) | (value << 4)); }
 
         [Category(Battle)]
-        public int BoostACC { get => Boost0 & 0xF; set => Boost0 = (byte)((Boost3 & ~0xF) | (value & 0xF)); }
+        public int BoostACC { get => Boost3 & 0xF; set => Boost3 = (byte)((Boost3 & ~0xF) | (value & 0xF)); }
 
         [Category(Battle)]
         public int BoostCRIT { get => (Boost3 >> 4) & 3; set => Boost3 = (byte)((Boost3 & ~0x30) | ((value & 3) << 4)); }
 
-        [Category(Battle), Description("1 = One PP Up, 3 = PP Max")]
-        public int BoostPP { get => (Boost3 >> 6) & 3; set => Boost3 = (byte)((Boost3 & 0x3F) | ((value & 3) << 6)); }
+        [Category(Battle)]
+        public int BoostPP1 { get => (Boost3 >> 6) & 1; set => Boost3 = (byte)((Boost3 & 0xBF) | ((value & 1) << 6)); }
+
+        [Category(Battle)]
+        public int BoostPPMax { get => (Boost3 >> 7) & 1; set => Boost3 = (byte)((Boost3 & 0x7F) | ((value & 1) << 7)); }
 
         [Category(Heal), Description("Raw value of the Heal enum."), RefreshProperties(RefreshProperties.All)]
         public int HealValue
@@ -128,5 +141,11 @@ namespace pkNX.Structures
             get => (int)HealAmount;
             set => HealAmount = (Heal)value;
         }
+
+        [Category(Heal), Description("Item is consumed when used."), RefreshProperties(RefreshProperties.All)]
+        public bool UseConsume { get => (Consumable & 0xF) != 0; set => Consumable = (byte)((Consumable & 0xF0) | (value ? 1 : 0)); }
+
+        [Category(Heal), Description("Item is not consumed when used."), RefreshProperties(RefreshProperties.All)]
+        public bool UseKeep { get => (Consumable & 0xF0) != 0; set => Consumable = (byte)((Consumable & 0x0F) | (value ? 0x10 : 0)); }
     }
 }

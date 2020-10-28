@@ -21,16 +21,17 @@ namespace pkNX.Randomization
         /// <summary>
         /// Initializes the <see cref="RandSpec"/> according to the provided settings.
         /// </summary>
-        /// <param name="settings"></param>
-        public void Initialize(SpeciesSettings settings)
+        /// <param name="settings">General settings</param>
+        /// <param name="banlist">Optional extra: banned species</param>
+        public void Initialize(SpeciesSettings settings, params int[] banlist)
         {
             s = settings;
-            var list = s.GetSpecies(Game.MaxSpeciesID, Game.Generation);
-            RandSpec = new GenericRandomizer(list);
+            var list = s.GetSpecies(Game.MaxSpeciesID, Game.Generation).Except(banlist);
+            RandSpec = new GenericRandomizer<int>(list.ToArray());
         }
 
         #region Random Species Filtering Parameters
-        private GenericRandomizer RandSpec;
+        private GenericRandomizer<int> RandSpec;
         private int loopctr;
         private const int l = 10; // tweakable scalars
         private const int h = 11;
@@ -61,6 +62,8 @@ namespace pkNX.Randomization
         }
 
         private bool GetIsTypeMatch(int newSpecies, int type) => type == -1 || SpeciesStat[newSpecies].Types.Any(z => z == type) || loopctr > 9000;
+
+        public int GetRandomSpecies() => RandSpec.Next();
 
         public int GetRandomSpecies(int oldSpecies)
         {

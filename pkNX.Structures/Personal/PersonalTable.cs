@@ -34,10 +34,13 @@ namespace pkNX.Structures
                     return z => new PersonalInfoXY(z);
                 case GameVersion.ORAS:
                     return z => new PersonalInfoORAS(z);
+                case GameVersion.SM:
+                case GameVersion.USUM:
+                    return z => new PersonalInfoSM(z);
                 case GameVersion.GG:
                     return z => new PersonalInfoGG(z);
                 default:
-                    return z => new PersonalInfoSM(z);
+                    return z => new PersonalInfoSWSH(z);
             }
         }
 
@@ -52,6 +55,10 @@ namespace pkNX.Structures
                 case GameVersion.SM:
                 case GameVersion.USUM:
                 case GameVersion.GG: return PersonalInfoSM.SIZE;
+
+                case GameVersion.SW:
+                case GameVersion.SH:
+                case GameVersion.SWSH: return PersonalInfoSWSH.SIZE;
 
                 default: return -1;
             }
@@ -129,7 +136,7 @@ namespace pkNX.Structures
         }
 
         /// <summary>
-        /// Count of entries in the table, which includes default species entries and their separate AltForm ID entreis.
+        /// Count of entries in the table, which includes default species entries and their separate AltForm ID entries.
         /// </summary>
         public int TableLength => Table.Length;
 

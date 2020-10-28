@@ -51,13 +51,16 @@ namespace pkNX.WinForms.Controls
             if (GameVersion.SM.Contains(g)) return new EditorSM(ROM);
             if (GameVersion.USUM.Contains(g)) return new EditorUU(ROM);
             if (GameVersion.GG.Contains(g)) return new EditorGG(ROM);
+            if (GameVersion.SWSH.Contains(g)) return new EditorSWSH(ROM);
             return null;
         }
 
         public static EditorBase GetEditor(string loc, int language)
         {
             var gl = GameLocation.GetGame(loc);
-            var gm = new GameManager(gl, language);
+            if (gl == null)
+                return null;
+            GameManager gm = GameManager.GetManager(gl, language);
             EditorBase editor = GetEditor(gm);
             editor.Location = loc;
             return editor;

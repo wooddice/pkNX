@@ -142,6 +142,26 @@
 
         /// <summary> UI Sprites for pretty in-game move descriptors. </summary>
         MoveSprites,
-        EncounterTrade
+
+        /// <summary> Traded Pokémon swap data. </summary>
+        EncounterTrade,
+
+        /// <summary> Gift Pokémon data. </summary>
+        EncounterGift,
+
+        /// <summary> Nest Data </summary>
+        NestData,
+
+        /// <summary> Wild Data </summary>
+        WildData,
+
+        /// <summary> Wild Data </summary>
+        WildData1,
+
+        /// <summary> Wild Data </summary>
+        WildData2,
+
+        /// <summary> Dynamax Adventure Dens </summary>
+        DynamaxDens,
     }
 }
